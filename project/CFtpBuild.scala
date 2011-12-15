@@ -2,17 +2,17 @@ import sbt._
 import Keys._
 
 object CFtpBuild extends Build {
-  
+
   lazy val root = Project(id = "cftp",
     base = file("."),
     settings = defaultSettings ++ Seq(
       libraryDependencies ++= Dependencies.allDependencies))
-      
+
   lazy val buildSettings = Seq(
     organization := "com.shsz.young",
     version := "1.0-SNAPSHOT",
     scalaVersion := "2.9.1")
-    
+
   override lazy val settings = super.settings ++ buildSettings
 
   lazy val baseSettings = Defaults.defaultSettings
@@ -24,7 +24,7 @@ object CFtpBuild extends Build {
 
 object Dependencies {
   import Dependency._
-  val allDependencies = Seq(akkaActor, akkaRemote, scalaTest, junit)
+  val allDependencies = Seq(akkaActor, akkaRemote, scalaTest, junit, commonsNet)
 }
 
 object Dependency {
@@ -37,5 +37,7 @@ object Dependency {
   val akkaRemote = "se.scalablesolutions.akka" % "akka-remote" % V.Akka
   val scalaTest = "org.scalatest" %% "scalatest" % V.ScalaTest % "test"
   val junit = "junit" % "junit" % V.JUnit % "test"
+
+  val commonsNet = "commons-net" % "commons-net" % "3.0.1"
 }
 
