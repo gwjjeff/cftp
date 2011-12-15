@@ -26,13 +26,14 @@ class CFtpSpec extends WordSpec with ShouldMatchers with BeforeAndAfterAll {
       cftp.disconnect();
       cftp.isConnected() should be(false)
     }
-    "登录和登出远程ftp服务器" in {
+    "登录和登出远程ftp服务器，活动测试" in {
       cftp.isConnected() should be(false)
       cftp.connect();
       cftp.isConnected() should be(true)
       cftp.isLoggedIn() should be(false)
       cftp.login(user, pass);
       cftp.isLoggedIn() should be(true)
+      cftp.activeTest() should be(true)
       cftp.logout()
       cftp.isLoggedIn() should be(false)
     }

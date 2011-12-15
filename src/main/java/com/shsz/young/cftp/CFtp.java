@@ -12,7 +12,7 @@ public class CFtp {
 
 	private Logger log = LoggerFactory.getLogger(CFtp.class);
 
-	public FTPClient client = new FTPClient();
+	private FTPClient client = new FTPClient();
 	private String host;
 	private int port;
 	private String username;
@@ -26,6 +26,10 @@ public class CFtp {
 
 	public boolean isLoggedIn() {
 		return loggedIn;
+	}
+	
+	public FTPClient getClient() {
+		return client;
 	}
 
 	public CFtp() {
@@ -88,6 +92,17 @@ public class CFtp {
 			return true;
 		} else {
 			log.error("ftp登出时出现错误");
+		}
+		return false;
+	}
+	
+	public boolean activeTest() {
+		if (!(connected && loggedIn)) return false;
+		try {
+			log.debug("活动测试");
+			return client.sendNoOp();
+		} catch (IOException e) {
+			log.info("网络异常，活动测试不成功");
 		}
 		return false;
 	}
