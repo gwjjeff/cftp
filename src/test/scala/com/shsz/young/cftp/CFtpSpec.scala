@@ -30,14 +30,12 @@ class CFtpSpec extends WordSpec with ShouldMatchers with BeforeAndAfterAll {
     "登录和登出远程ftp服务器，活动测试" in {
       cftp.isLoggedIn() should be(true)
       cftp.activeTest() should be(true)
+    }
+    "上传、下载和删除文件" in {
       cftp.cd(ddir) should be(true)
       cftp.upload(localFile) should be(true)
       cftp.download(remoteFile, localFile2) should be(true)
       cftp.delete(remoteFile) should be(true)
-    }
-    "上传和下载文件" in {
-      pending
-
     }
   }
   override def beforeAll = {
