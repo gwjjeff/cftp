@@ -13,15 +13,19 @@ object CFtpSpec {
 @RunWith(classOf[JUnitRunner])
 class CFtpSpec extends WordSpec with ShouldMatchers with BeforeAndAfterAll {
   import CFtpSpec._
+  val is = classOf[CFtpSpec].getClassLoader.getResourceAsStream("secret.properties")
+  val p = new java.util.Properties
+  p.load(is)
   // 必须是正确的host，user，pass，ddir
-  val host = "xx"
-  val user = "xx"
-  val pass = "xx"
-  val ddir = "xx"
+  val host = p.getProperty("test.cftp.host")
+  val user = p.getProperty("test.cftp.user")
+  val pass = p.getProperty("test.cftp.pass")
+  val ddir = p.getProperty("test.cftp.ddir")
 
-  val localFile = "e:/temp1/_mylogfile.log"
-  val remoteFile = "_mylogfile.log"
-  val localFile2 = "e:/temp1/_mylogfile.log2"
+  val localFile = p.getProperty("test.cftp.localFile")
+  val remoteFile = p.getProperty("test.cftp.remoteFile")
+  val localFile2 = p.getProperty("test.cftp.localFile2")
+  
   val cftp = new CFtp(host)
   "CFtp" should {
     "连接远程ftp服务器" in {
@@ -40,10 +44,10 @@ class CFtpSpec extends WordSpec with ShouldMatchers with BeforeAndAfterAll {
   }
   override def beforeAll = {
     cftp.isConnected() should be(false)
-    cftp.open();
+    cftp.open()
     cftp.isConnected() should be(true)
     cftp.isLoggedIn() should be(false)
-    cftp.login(user, pass);
+    cftp.login(user, pass)
   }
   override def afterAll = {
     if (cftp.isConnected()) cftp.quit()
