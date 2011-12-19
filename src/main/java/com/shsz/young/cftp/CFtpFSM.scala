@@ -10,7 +10,6 @@ case object UnAvailable extends FtpClientState
 case object Disconnected extends FtpClientState
 case object Connected extends FtpClientState
 case object LoggedIn extends FtpClientState
-case object Busy extends FtpClientState
 
 sealed trait FtpMessage
 case object Open extends FtpMessage
@@ -18,16 +17,21 @@ case object Login extends FtpMessage
 case class UploadFile(file: String) extends FtpMessage
 
 object CFtpFSM {
-  lazy val is = classOf[CFtpFSM].getClassLoader.getResourceAsStream("secret.properties")
-  lazy val p = new java.util.Properties
-  p.load(is)
-  lazy val host = p.getProperty("test.cftp.host")
-  lazy val port = Integer.parseInt(p.getProperty("test.cftp.port"))
-  lazy val serverEncoding = p.getProperty("test.cftp.serverEncoding")
-  lazy val user = p.getProperty("test.cftp.user")
-  lazy val pass = p.getProperty("test.cftp.pass")
-  lazy val ddir = p.getProperty("test.cftp.ddir")
-  lazy val fromConf = actorOf(new CFtpFSM(host, port, serverEncoding, user, pass, ddir))
+  lazy val DEFAULT = fromConf("secret.properties")
+
+  def fromConf(propsFile: String) = {
+    // TODO: 处理获取资源是出现空指针的情况
+    val is = classOf[CFtpFSM].getClassLoader.getResourceAsStream(propsFile)
+    val p = new java.util.Properties
+    p.load(is)
+    val host = p.getProperty("test.cftp.host")
+    val port = Integer.parseInt(p.getProperty("test.cftp.port"))
+    val serverEncoding = p.getProperty("test.cftp.serverEncoding")
+    val user = p.getProperty("test.cftp.user")
+    val pass = p.getProperty("test.cftp.pass")
+    val ddir = p.getProperty("test.cftp.ddir")
+    actorOf(new CFtpFSM(host, port, serverEncoding, user, pass, ddir))
+  }
 }
 
 class CFtpFSM(
@@ -77,7 +81,7 @@ class CFtpFSM(
       if (cftp.activeTest())
         stay forMax (ACTIVE_TIMEOUT)
       else {
-        //TODO: 处理活动测试不成功
+        //活动测试不成功时定时重连
         EventHandler.error(this, "活动测试不成功")
         cftp.quit()
         goto(UnAvailable)
@@ -97,9 +101,9 @@ class CFtpFSM(
       setTimer("autoConn", Open, DISCON_TIMEOUT, false)
       goto(Disconnected)
   }
-  
+
   onTransition {
-    case a -> UnAvailable  => println(a + " -> " + "UnAvailable")
+    case a -> UnAvailable => EventHandler.info(this, a + " -> " + "UnAvailable")
   }
 
   initialize
