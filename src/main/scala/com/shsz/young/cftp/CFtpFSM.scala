@@ -58,7 +58,7 @@ class CFtpFSM(
         setTimer("autoLogin", Login, ACTIVE_TIMEOUT, false)
         goto(Connected)
       } else {
-        EventHandler.error(this, "无法连接 " + host + ":" + port)
+        EventHandler.error(this, "无法连接 %s:%s".format(host, port))
         goto(UnAvailable)
       }
   }
@@ -71,7 +71,7 @@ class CFtpFSM(
         cftp.cd(ddir) //TODO：处理异常
         goto(LoggedIn) forMax (ACTIVE_TIMEOUT)
       } else {
-        EventHandler.error(this, "登录失败 user:" + user)
+        EventHandler.error(this, "登录失败 user:%s".format(user))
         goto(UnAvailable)
       }
   }
@@ -90,7 +90,7 @@ class CFtpFSM(
       if (cftp.upload(file))
         stay forMax (ACTIVE_TIMEOUT)
       else {
-        EventHandler.error(this, "上传失败 file:" + file)
+        EventHandler.error(this, "上传失败 file:%s".format(file))
         cftp.quit()
         goto(UnAvailable)
       }
@@ -101,13 +101,9 @@ class CFtpFSM(
       setTimer("autoConn", Open, DISCON_TIMEOUT, false)
       goto(Disconnected)
   }
-  
-  onTransition {
-    case a -> UnAvailable  => println(a + " -> " + "UnAvailable")
-  }
 
   onTransition {
-    case a -> UnAvailable => EventHandler.info(this, a + " -> " + "UnAvailable")
+    case a -> UnAvailable => EventHandler.info(this,  "%s -> UnAvailable".format(a))
   }
 
   initialize
@@ -122,11 +118,11 @@ class FileStatusManager extends Actor {
   def receive = {
     case FileUpload(file, status) => status match {
       case "begin" =>
-        EventHandler.info(this, file + " upload " + status)
+        EventHandler.info(this, "%s upload %s".format(file, status))
       case "success" =>
-        EventHandler.info(this, file + " upload " + status)
+        EventHandler.info(this, "%s upload %s".format(file, status))
       case "failed" =>
-        EventHandler.info(this, file + " upload " + status)
+        EventHandler.info(this, "%s upload %s".format(file, status))
     }
   }
 }
