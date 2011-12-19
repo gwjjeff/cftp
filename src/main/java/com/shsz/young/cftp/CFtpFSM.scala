@@ -118,7 +118,7 @@ sealed trait FileMessage
  * status: begin, success, failed
  */
 case class FileUpload(file: String, status: String) extends FileMessage
-class FileStatusManage extends Actor {
+class FileStatusManager extends Actor {
   def receive = {
     case FileUpload(file, status) => status match {
       case "begin" =>
