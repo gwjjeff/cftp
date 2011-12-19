@@ -18,7 +18,13 @@ import org.slf4j.LoggerFactory;
 
 public class CFtp {
 
-	private Logger log = LoggerFactory.getLogger(CFtp.class);
+	public static final String FU_BEGIN = "begin";
+	public static final String FU_SUCCESS = "success";
+	public static final String FU_FAILED = "failed";
+
+	private static Logger log = LoggerFactory.getLogger(CFtp.class);
+	
+	public static int Count = 0;
 
 	private FTPClient client = new FTPClient();
 	private String host;
@@ -42,7 +48,7 @@ public class CFtp {
 	}
 
 	public CFtp() {
-
+		Count++;
 	}
 
 	public CFtp(String host) {
@@ -50,6 +56,7 @@ public class CFtp {
 	}
 
 	public CFtp(String host, int port, String serverEncoding) {
+		Count++;
 		this.host = host;
 		this.port = port;
 		this.serverEncoding = serverEncoding;
@@ -180,12 +187,12 @@ public class CFtp {
 		boolean done = false;
 		InputStream input = null;
 		try {
-			fileEvent("开始上传文件: local: " + local + " remote: " + remote);
+			fileUploadEvent(FU_BEGIN, local, remote);
 			input = new FileInputStream(local);
 			done = client.storeFile(remote, input);
 			input.close();
 			if (done)
-				fileEvent("成功上传文件: local: " + local + " remote: " + remote);
+				fileUploadEvent(FU_SUCCESS, local, remote);
 		} catch (FileNotFoundException e) {
 			log.info("错误的文件名: local: " + local);
 		} finally {
@@ -196,7 +203,7 @@ public class CFtp {
 			}
 		}
 		if (!done)
-			fileEvent("上传文件失败: " + local);
+			fileUploadEvent(FU_FAILED, local, remote);
 		return done;
 	}
 
@@ -240,6 +247,12 @@ public class CFtp {
 			fileEvent("删除远程文件失败" + remote);
 		}
 		return done;
+	}
+
+	protected void fileUploadEvent(String status, String local, String remote) {
+		if (log.isDebugEnabled()) {
+			log.debug(String.format("上传文件状态  %s, local: %s, remote: %s", status, local, remote));
+		}
 	}
 
 	protected void fileEvent(String logs) {
