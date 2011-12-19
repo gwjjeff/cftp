@@ -24,6 +24,7 @@ public class CFtp {
 	private String host;
 	private int port;
 	private String username;
+	private String serverEncoding;
 
 	private boolean connected = false;
 	private boolean loggedIn = false;
@@ -45,12 +46,13 @@ public class CFtp {
 	}
 
 	public CFtp(String host) {
-		this(host, 21);
+		this(host, 21, "UTF-8");
 	}
 
-	public CFtp(String host, int port) {
+	public CFtp(String host, int port, String serverEncoding) {
 		this.host = host;
 		this.port = port;
+		this.serverEncoding = serverEncoding;
 	}
 
 	public void open() throws SocketException, IOException {
@@ -110,6 +112,7 @@ public class CFtp {
 	}
 
 	protected void enterClientMode() {
+		client.setControlEncoding(serverEncoding);
 		client.enterLocalPassiveMode();
 		client.setControlKeepAliveTimeout(15);
 		try {
