@@ -108,3 +108,21 @@ class CFtpFSM(
 
   initialize
 }
+
+sealed trait FileMessage
+/**
+ * status: begin, success, failed
+ */
+case class FileUpload(file: String, status: String) extends FileMessage
+class FileStatusManage extends Actor {
+  def receive = {
+    case FileUpload(file, status) => status match {
+      case "begin" =>
+        EventHandler.info(this, file + " upload " + status)
+      case "success" =>
+        EventHandler.info(this, file + " upload " + status)
+      case "failed" =>
+        EventHandler.info(this, file + " upload " + status)
+    }
+  }
+}

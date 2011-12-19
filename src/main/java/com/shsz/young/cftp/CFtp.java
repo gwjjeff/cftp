@@ -180,6 +180,7 @@ public class CFtp {
 		boolean done = false;
 		InputStream input = null;
 		try {
+			fileEvent("开始上传文件: local: " + local + " remote: " + remote);
 			input = new FileInputStream(local);
 			done = client.storeFile(remote, input);
 			input.close();
