@@ -101,6 +101,10 @@ class CFtpFSM(
       setTimer("autoConn", Open, DISCON_TIMEOUT, false)
       goto(Disconnected)
   }
+  
+  onTransition {
+    case a -> UnAvailable  => println(a + " -> " + "UnAvailable")
+  }
 
   onTransition {
     case a -> UnAvailable => EventHandler.info(this, a + " -> " + "UnAvailable")
