@@ -55,7 +55,7 @@ class CFtpFSM(
         goto(Connected)
       } else {
         EventHandler.error(this, "无法连接 " + host + ":" + port)
-        stop
+        goto(UnAvailable)
       }
   }
 
@@ -68,7 +68,7 @@ class CFtpFSM(
         goto(LoggedIn) forMax (ACTIVE_TIMEOUT)
       } else {
         EventHandler.error(this, "登录失败 user:" + user)
-        stop
+        goto(UnAvailable)
       }
   }
 
@@ -96,6 +96,10 @@ class CFtpFSM(
     case Ev(StateTimeout) =>
       setTimer("autoConn", Open, DISCON_TIMEOUT, false)
       goto(Disconnected)
+  }
+  
+  onTransition {
+    case a -> UnAvailable  => println(a + " -> " + "UnAvailable")
   }
 
   initialize

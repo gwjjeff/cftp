@@ -55,21 +55,35 @@ public class CFtp {
 		this.serverEncoding = serverEncoding;
 	}
 
-	public void open() throws SocketException, IOException {
-		client.connect(host, port);
+	public void open() {
+		try {
+			client.connect(host, port);
+		} catch (SocketException e) {
+			log.error("连接ftp失败，网络异常");
+		} catch (IOException e) {
+			log.error("连接ftp失败，IO异常");
+		}
 		if (FTPReply.isPositiveCompletion(client.getReplyCode())) {
 			this.connected = true;
 			log.info("ftp连接成功");
 		} else {
-			client.disconnect();
+			try {
+				client.disconnect();
+			} catch (IOException e) {
+				log.error("ftp连接断开时IO异常");
+			}
 			log.info("ftp连接失败");
 		}
 	}
 
-	public void quit() throws IOException {
+	public void quit() {
 		if (loggedIn)
-			logout();
-		client.disconnect();
+			try {
+				logout();
+				client.disconnect();
+			} catch (IOException e) {
+				log.error("ftp连接断开时IO异常");
+			}
 		log.info("ftp断开连接");
 		this.connected = false;
 	}
