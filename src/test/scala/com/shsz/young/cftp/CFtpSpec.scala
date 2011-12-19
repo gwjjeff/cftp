@@ -18,7 +18,7 @@ class CFtpSpec extends WordSpec with ShouldMatchers with BeforeAndAfterAll {
   p.load(is)
   // 必须是正确的host，user，pass，ddir
   val host = p.getProperty("test.cftp.host")
-  val port = p.getProperty("test.cftp.port")
+  val port = Integer.parseInt(p.getProperty("test.cftp.port"))
   val user = p.getProperty("test.cftp.user")
   val pass = p.getProperty("test.cftp.pass")
   val ddir = p.getProperty("test.cftp.ddir")
@@ -29,7 +29,7 @@ class CFtpSpec extends WordSpec with ShouldMatchers with BeforeAndAfterAll {
   
   val serverEncoding = p.getProperty("test.cftp.serverEncoding")
   
-  val cftp = new CFtp(host, Integer.parseInt(port), serverEncoding)
+  val cftp = new CFtp(host, port, serverEncoding)
   "CFtp" should {
     "连接远程ftp服务器" in {
       cftp.isConnected() should be(true)
