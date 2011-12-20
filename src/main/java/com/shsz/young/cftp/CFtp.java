@@ -66,8 +66,10 @@ public class CFtp {
 			client.connect(host, port);
 		} catch (SocketException e) {
 			log.error("连接ftp失败，网络异常");
+			return;
 		} catch (IOException e) {
 			log.error("连接ftp失败，IO异常");
+			return;
 		}
 		if (FTPReply.isPositiveCompletion(client.getReplyCode())) {
 			this.connected = true;
@@ -100,8 +102,7 @@ public class CFtp {
 			return;
 		}
 		if (loggedIn) {
-			log.error("重复登录，忽略");
-			return;
+			log.warn("重复登录，警告");
 		}
 		if (client.login(username, password)) {
 			this.username = username;
@@ -279,6 +280,10 @@ public class CFtp {
 
 		void debug(String t) {
 			log.debug(String.format("CFtp:%s - %s", id, t));
+		}
+		
+		void warn(String t) {
+			log.warn(String.format("CFtp:%s - %s", id, t));
 		}
 		
 		boolean isDebugEnabled() {

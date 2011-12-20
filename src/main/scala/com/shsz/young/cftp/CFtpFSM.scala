@@ -16,7 +16,7 @@ case object LoggedIn extends FtpClientState
 sealed trait FtpMessage
 case object Open extends FtpMessage
 case object Login extends FtpMessage
-case class UploadFile(file: String) extends FtpMessage
+case class UploadFile(local: String, remote: String) extends FtpMessage
 
 object CFtpFSM {
   implicit lazy val manager = actorOf[FileStatusManager].start()
@@ -30,7 +30,7 @@ object CFtpFSM {
     p.load(is)
     p
   }
-  
+
   private def fromProps(p: java.util.Properties)(implicit m: ActorRef) = {
     val host = p.getProperty("test.cftp.host")
     val port = Integer.parseInt(p.getProperty("test.cftp.port"))
@@ -42,17 +42,17 @@ object CFtpFSM {
       protected val manager = m
     })
   }
-  
+
   def singleFromConf(propsFile: String) = {
     val p = loadProps(propsFile)
     fromProps(p).start()
   }
-  
+
   def multiFromConf(fsmCnt: Int, propsFile: String) = {
     val p = loadProps(propsFile)
     Vector.fill(fsmCnt)(fromProps(p).start())
   }
-  
+
   def fsmRouter(fsmCnt: Int, propsFile: String, autoStart: Boolean = true) = {
     val multi = multiFromConf(fsmCnt, propsFile)
     val router = Routing.loadBalancerActor(CyclicIterator(multi)).start()
@@ -72,7 +72,8 @@ abstract class CFtpFSM(
 
   // defined else where
   protected val manager: ActorRef
-  
+
+  private var cftpOpt: Option[CFtp] = None
   private var cftp: CFtp = _
   private val ACTIVE_TIMEOUT = 5 seconds
   private val DISCON_TIMEOUT = 10 seconds
@@ -82,11 +83,12 @@ abstract class CFtpFSM(
   when(Disconnected) {
     case Ev(Open) =>
       cancelTimer("autoConn")
-      cftp = new CFtp(host, port, serverEncoding) {
+      cftpOpt = cftpOpt orElse Some(new CFtp(host, port, serverEncoding) {
         override def fileUploadEvent(status: String, local: String, remote: String) {
           manager ! FileUploadMsg(status, local)
         }
-      }
+      })
+      cftp = cftpOpt.get
       cftp.open()
       if (cftp.isConnected()) {
         setTimer("autoLogin", Login, ACTIVE_TIMEOUT, false)
@@ -120,11 +122,11 @@ abstract class CFtpFSM(
         cftp.quit()
         goto(UnAvailable)
       }
-    case Ev(UploadFile(file)) =>
-      if (cftp.upload(file))
+    case Ev(UploadFile(local, remote)) =>
+      if (cftp.upload(local, remote))
         stay forMax (ACTIVE_TIMEOUT)
       else {
-        EventHandler.error(this, "上传失败 file:%s".format(file))
+        EventHandler.error(this, "上传失败 local: %s, remote: %S".format(local, remote))
         cftp.quit()
         goto(UnAvailable)
       }
@@ -137,7 +139,7 @@ abstract class CFtpFSM(
   }
 
   onTransition {
-    case a -> UnAvailable => EventHandler.info(this,  "%s -> UnAvailable".format(a))
+    case a -> UnAvailable => EventHandler.info(this, "%s -> UnAvailable".format(a))
   }
 
   initialize
