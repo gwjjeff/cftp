@@ -20,8 +20,9 @@ case class UploadFile(local: String, remote: String) extends FtpMessage
 
 object CFtpFSM {
   implicit lazy val manager = actorOf[FileStatusManager].start()
-  lazy val DEFAULT = singleFromConf("secret.properties")
-  lazy val DEFAULTROUTER = fsmRouter(3, "secret.properties")
+  private lazy val props = loadProps("secret.properties")
+  lazy val DEFAULT = singleFromConf(props)
+  lazy val DEFAULTROUTER = fsmRouter(props)
 
   private def loadProps(propsFile: String) = {
     // TODO: 处理获取资源是出现空指针的情况
@@ -33,7 +34,7 @@ object CFtpFSM {
 
   private def fromProps(p: java.util.Properties)(implicit m: ActorRef) = {
     val host = p.getProperty("test.cftp.host")
-    val port = Integer.parseInt(p.getProperty("test.cftp.port"))
+    val port = p.getProperty("test.cftp.port").toInt
     val serverEncoding = p.getProperty("test.cftp.serverEncoding")
     val user = p.getProperty("test.cftp.user")
     val pass = p.getProperty("test.cftp.pass")
@@ -43,18 +44,18 @@ object CFtpFSM {
     })
   }
 
-  def singleFromConf(propsFile: String) = {
-    val p = loadProps(propsFile)
+  def singleFromConf(p: java.util.Properties) = {
     fromProps(p).start()
   }
 
-  def multiFromConf(fsmCnt: Int, propsFile: String) = {
-    val p = loadProps(propsFile)
+  def multiFromConf(p: java.util.Properties) = {
+    val fsmCnt = p.getProperty("test.cftpfsm.count").toInt
     Vector.fill(fsmCnt)(fromProps(p).start())
   }
 
-  def fsmRouter(fsmCnt: Int, propsFile: String, autoStart: Boolean = true) = {
-    val multi = multiFromConf(fsmCnt, propsFile)
+  def fsmRouter(p: java.util.Properties) = {
+    val multi = multiFromConf(p)
+    val autoStart = p.getProperty("test.cftpfsm.autoStart").toBoolean
     val router = Routing.loadBalancerActor(CyclicIterator(multi)).start()
     if (autoStart) router ! Broadcast(Open)
     router
