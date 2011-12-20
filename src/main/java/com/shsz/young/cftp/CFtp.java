@@ -22,9 +22,10 @@ public class CFtp {
 	public static final String FU_SUCCESS = "success";
 	public static final String FU_FAILED = "failed";
 
-	private static Logger log = LoggerFactory.getLogger(CFtp.class);
-	
+	private static Logger logger = LoggerFactory.getLogger(CFtp.class);
+
 	public static int Count = 0;
+	private SimpleLogger log = new SimpleLogger(logger, Count++);
 
 	private FTPClient client = new FTPClient();
 	private String host;
@@ -48,7 +49,6 @@ public class CFtp {
 	}
 
 	public CFtp() {
-		Count++;
 	}
 
 	public CFtp(String host) {
@@ -56,7 +56,6 @@ public class CFtp {
 	}
 
 	public CFtp(String host, int port, String serverEncoding) {
-		Count++;
 		this.host = host;
 		this.port = port;
 		this.serverEncoding = serverEncoding;
@@ -258,6 +257,32 @@ public class CFtp {
 	protected void fileEvent(String logs) {
 		if (log.isDebugEnabled()) {
 			log.debug(logs);
+		}
+	}
+
+	class SimpleLogger {
+		private Logger log;
+		private int id;
+
+		SimpleLogger(Logger log, int id) {
+			this.log = log;
+			this.id = id;
+		}
+
+		void info(String t) {
+			log.info(String.format("CFtp:%s - %s", id, t));
+		}
+
+		void error(String t) {
+			log.error(String.format("CFtp:%s - %s", id, t));
+		}
+
+		void debug(String t) {
+			log.debug(String.format("CFtp:%s - %s", id, t));
+		}
+		
+		boolean isDebugEnabled() {
+			return log.isDebugEnabled();
 		}
 	}
 }
