@@ -187,8 +187,8 @@ public class CFtp {
 		boolean done = false;
 		InputStream input = null;
 		try {
-			fileUploadEvent(FU_BEGIN, local, remote);
 			input = new FileInputStream(local);
+			fileUploadEvent(FU_BEGIN, local, remote);
 			done = client.storeFile(remote, input);
 			input.close();
 			if (done)

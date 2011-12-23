@@ -124,13 +124,13 @@ abstract class CFtpFSM(
         goto(UnAvailable)
       }
     case Ev(UploadFile(local, remote)) =>
-      if (cftp.upload(local, remote))
-        stay forMax (ACTIVE_TIMEOUT)
-      else {
-        EventHandler.error(this, "上传失败 local: %s, remote: %S".format(local, remote))
-        cftp.quit()
-        goto(UnAvailable)
+      if (cftp.upload(local, remote)) {
+        EventHandler.info(this, "上传成功 local: %s, remote: %S".format(local, remote))
       }
+      else {
+        EventHandler.info(this, "上传失败 local: %s, remote: %S".format(local, remote))
+      }
+      stay forMax (ACTIVE_TIMEOUT)
   }
 
   when(UnAvailable, ACTIVE_TIMEOUT) {
