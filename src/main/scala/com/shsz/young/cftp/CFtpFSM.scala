@@ -23,16 +23,22 @@ case class RetryAll() extends FtpMessage
 case class Dump() extends FtpMessage
 
 object CFtpFSM {
+  def runDefault() {
+    val manager = DEFAULTMANAGER
+    val router = DEFAULTROUTER
+  }
   // implicit lazy val statusLogger = actorOf[FileStatusLogger].start()
   private lazy val props = loadProps("secret.properties")
   lazy val DEFAULT = singleFromConf(props)
   lazy val DEFAULTROUTER = fsmRouter(props)
+  lazy val DEFAULTMANAGER = managerFromConf(props)
 
   private def loadProps(propsFile: String) = {
     // TODO: 处理获取资源是出现空指针的情况
     val is = classOf[CFtpFSM].getClassLoader.getResourceAsStream(propsFile)
     val p = new java.util.Properties
     p.load(is)
+    is.close()
     p
   }
 
@@ -43,7 +49,11 @@ object CFtpFSM {
     val user = p.getProperty("test.cftp.user")
     val pass = p.getProperty("test.cftp.pass")
     val ddir = p.getProperty("test.cftp.ddir")
-    actorOf(new CFtpFSM(host, port, serverEncoding, user, pass, ddir))
+    val mgrHost = p.getProperty("test.cftpmgr.host")
+    val mgrPort = p.getProperty("test.cftpmgr.port").toInt
+    val mgrServiceId = p.getProperty("test.cftpmgr.serviceId")
+    actorOf(new CFtpFSM(host, port, serverEncoding, user, pass, ddir,
+        mgrServiceId, mgrHost, mgrPort))
   }
 
   def singleFromConf(p: java.util.Properties) = {
@@ -58,11 +68,40 @@ object CFtpFSM {
   def fsmRouter(p: java.util.Properties) = {
     val multi = multiFromConf(p)
     val autoStart = p.getProperty("test.cftpfsm.autoStart").toBoolean
-    val router = Routing.loadBalancerActor(CyclicIterator(multi)).start()
+    val interRouter = Routing.loadBalancerActor(CyclicIterator(multi)).start()
+    val routerId = p.getProperty("test.cftpfsm.routerId")
+    val router = actorOf(new ActorForwarder(routerId, interRouter)).start()
+    
     if (autoStart) router ! Broadcast(Open)
     router
   }
 
+  def managerFromConf(p: java.util.Properties) = {
+    val mvAfterSucc = p.getProperty("test.cftpmgr.mvAfterSucc").toBoolean
+    val bakPath = p.getProperty("test.cftpmgr.bakPath")
+    val routerId = p.getProperty("test.cftpfsm.routerId")
+    val initDelay = p.getProperty("test.cftpmgr.initDelay").toLong
+    val delay = p.getProperty("test.cftpmgr.delay").toLong
+    val host = p.getProperty("test.cftpmgr.host")
+    val port = p.getProperty("test.cftpmgr.port").toInt
+    val serviceId = p.getProperty("test.cftpmgr.serviceId")
+    val mgr = actorOf(new FileUploadManager(mvAfterSucc, bakPath, routerId,
+      host, port, serviceId, initDelay, delay)).start()
+    mgr
+  }
+
+}
+
+/*
+ * akka 的 actor 的 id 似乎只能在创建的时候修改id，之后才能用 actorsFor 找到
+ * 但是 router actor 似乎没有提供这样的方法，使用类名的话害怕会有冲突
+ * 因此单独写一个actor用户包装router，可以启动的时候设置id，并且将所有消息forward给router
+ */
+class ActorForwarder(id: String, inter: ActorRef) extends Actor {
+  self.id = id
+  def receive = {
+    case m => inter forward m
+  }
 }
 
 class CFtpFSM(
@@ -71,11 +110,14 @@ class CFtpFSM(
   serverEncoding: String,
   user: String,
   pass: String,
-  ddir: String) extends Actor with FSM[FtpClientState, Unit] {
+  ddir: String,
+  mgrServiceId: String,
+  mgrHost: String,
+  mgrPort: Int) extends Actor with FSM[FtpClientState, Unit] {
   import FSM._
 
   // defined else where
-  val uploadManager = remote.actorFor("cftp:service", "localhost", 2552)
+  val uploadManager = remote.actorFor(mgrServiceId, mgrHost, mgrPort)
 
   private var cftpOpt: Option[CFtp] = None
   private var cftp: CFtp = _
@@ -172,8 +214,11 @@ case class FileStatus(remote: String,
   start: Date, var lastSend: Date, var lastFail: Date, var retryReq: Int)
 
 // TODO: 控制单线程dispatcher
-class FileUploadManager(mvAfterSucc: Boolean = true, bakPath: String = "e:/temp1/b",
-  router: ActorRef = CFtpFSM.DEFAULTROUTER) extends Actor {
+class FileUploadManager(mvAfterSucc: Boolean, bakPath: String, routerId: String,
+  host: String, port: Int, serviceId: String,
+  initDelay: Long, delay: Long) extends Actor {
+
+  lazy val router: ActorRef = registry.actorsFor(routerId).head
 
   val bakDir = new File(bakPath)
   // TODO: 不满足requir时退出
@@ -223,20 +268,9 @@ class FileUploadManager(mvAfterSucc: Boolean = true, bakPath: String = "e:/temp1
   //  }
 
   override def preStart() {
-    remote.start("localhost", 2552)
-    remote.register("cftp:service", self)
-    akka.actor.Scheduler.schedule(self, RetryAll(), 30, 10, java.util.concurrent.TimeUnit.SECONDS)
+    remote.start(host, port)
+    remote.register(serviceId, self)
+    akka.actor.Scheduler.schedule(self, RetryAll(), initDelay, delay, java.util.concurrent.TimeUnit.SECONDS)
   }
 }
 
-object FileUploadManager {
-  lazy val DEFAULT = actorOf(new FileUploadManager()).start()
-
-  def sendFile(local: String, remote: String) {
-    DEFAULT ! UploadFile(local, remote)
-  }
-
-  def dumpStatus() {
-    DEFAULT ! Dump()
-  }
-}
