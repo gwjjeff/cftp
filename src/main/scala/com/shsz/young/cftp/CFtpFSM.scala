@@ -6,6 +6,7 @@ import akka.util.duration._
 import Actor._
 import akka.routing.{ Routing, CyclicIterator }
 import Routing._
+import java.util.Date
 
 sealed trait FtpClientState
 case object UnAvailable extends FtpClientState
@@ -19,14 +20,20 @@ case object Login extends FtpMessage
 case class UploadFile(local: String, remote: String) extends FtpMessage
 case class UploadFileSucc(local: String, remote: String) extends FtpMessage
 case class UploadFileFail(local: String, remote: String) extends FtpMessage
-case class RetryAll() extends FtpMessage
-case class Dump() extends FtpMessage
+case object Ping extends FtpMessage
+case class Pong(cftpId: Int, t: java.util.Date) extends FtpMessage
+case object RetryAll extends FtpMessage
+case object Dump extends FtpMessage
 
 object CFtpFSM {
   import utils._
   def runDefault() {
     val manager = DEFAULTMANAGER
     val router = DEFAULTROUTER
+  }
+  def shutdown() {
+    registry.shutdownAll()
+    remote.shutdown()
   }
   // implicit lazy val statusLogger = actorOf[FileStatusLogger].start()
   private lazy val props = loadProps("secret.properties")
@@ -80,8 +87,9 @@ object CFtpFSM {
     val host = p.getProperty("test.cftpmgr.host")
     val port = p.getProperty("test.cftpmgr.port").toInt
     val serviceId = p.getProperty("test.cftpmgr.serviceId")
+    val maxRetry = p.getProperty("test.cftpmgr.maxRetry").toInt
     val mgr = actorOf(new FileUploadManager(mvAfterSucc, bakPath, routerId,
-      host, port, serviceId, initDelay, delay)).start()
+      host, port, serviceId, initDelay, delay, maxRetry)).start()
     mgr
   }
 
@@ -167,6 +175,9 @@ class CFtpFSM(
         // EventHandler.info(this, "上传失败 local: %s, remote: %S".format(local, remote))
       }
       stay forMax (ACTIVE_TIMEOUT)
+    case Ev(Ping) =>
+      uploadManager ! Pong(cftp.id, new java.util.Date())
+      stay forMax (ACTIVE_TIMEOUT)
   }
 
   when(UnAvailable, ACTIVE_TIMEOUT) {
@@ -205,12 +216,13 @@ import java.util.Date
 import java.io.File
 import scala.collection.mutable.HashMap
 case class FileStatus(remote: String,
-  start: Date, var lastSend: Date, var lastFail: Date, var retryReq: Int)
+  start: Date, var lastSend: Date, var lastFail: Option[Date], var retryReq: Int)
 
 // TODO: 控制单线程dispatcher
 class FileUploadManager(mvAfterSucc: Boolean, bakPath: String, routerId: String,
   host: String, port: Int, serviceId: String,
-  initDelay: Long, delay: Long) extends Actor {
+  initDelay: Long, delay: Long,
+  maxRetry: Int) extends Actor {
 
   lazy val router: ActorRef = registry.actorsFor(routerId).head
 
@@ -223,7 +235,7 @@ class FileUploadManager(mvAfterSucc: Boolean, bakPath: String, routerId: String,
   def receive = {
     case m @ UploadFile(local, remote) =>
       val now = new Date()
-      st += (local -> FileStatus(remote, now, now, null, 0))
+      st += (local -> FileStatus(remote, now, now, None, 0))
       router ! m
     case m @ UploadFileSucc(local, remote) =>
       st -= local
@@ -240,21 +252,26 @@ class FileUploadManager(mvAfterSucc: Boolean, bakPath: String, routerId: String,
     case m @ UploadFileFail(local, remote) =>
       val now = new Date()
       st(local).retryReq += 1
-      st(local).lastFail = now
-    case x: RetryAll =>
+      st(local).lastFail = Some(now)
+    case RetryAll =>
       st.foreach {
         case (local, status @ FileStatus(remote, start, lastSend,
-          lastFail, retryReq)) if ((retryReq > 0) && (lastFail.getTime() > lastSend.getTime())) =>
+          lastFail, retryReq)) if ((retryReq > 0) && (retryReq <= maxRetry) && lastFail.isDefined && (lastFail.get.getTime() > lastSend.getTime())) =>
           val now = new Date()
           router ! UploadFile(local, remote)
           status.lastSend = now
+        case _ =>
       }
-    case x: Dump =>
+    case Dump =>
       st.foreach {
         case (local, status) =>
           // TODO: 编写逻辑，Dump到文件
           println("%s: %s".format(local, status))
       }
+    case Ping =>
+      router ! Broadcast(Ping)
+    case Pong(id, time) =>
+      EventHandler.info(this, "cftp: %s is active at %s".format(id, time))
   }
 
   //  override def postRestart(reason: Throwable) {
@@ -264,7 +281,7 @@ class FileUploadManager(mvAfterSucc: Boolean, bakPath: String, routerId: String,
   override def preStart() {
     remote.start(host, port)
     remote.register(serviceId, self)
-    akka.actor.Scheduler.schedule(self, RetryAll(), initDelay, delay, java.util.concurrent.TimeUnit.SECONDS)
+    akka.actor.Scheduler.schedule(self, RetryAll, initDelay, delay, java.util.concurrent.TimeUnit.SECONDS)
   }
 }
 

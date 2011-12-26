@@ -25,7 +25,8 @@ public class CFtp {
 	private static Logger logger = LoggerFactory.getLogger(CFtp.class);
 
 	public static int Count = 0;
-	private SimpleLogger log = new SimpleLogger(logger, Count++);
+	public final int id = Count++;
+	private SimpleLogger log = new SimpleLogger(logger, id);
 
 	private FTPClient client = new FTPClient();
 	private String host;

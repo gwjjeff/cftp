@@ -16,6 +16,8 @@ object CamelSender {
 
   def stop() {
     service.stop
+    registry.shutdownAll()
+    remote.shutdown()
   }
 }
 
