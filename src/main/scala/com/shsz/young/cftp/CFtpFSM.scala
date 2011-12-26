@@ -23,24 +23,16 @@ case class RetryAll() extends FtpMessage
 case class Dump() extends FtpMessage
 
 object CFtpFSM {
+  import utils._
   def runDefault() {
     val manager = DEFAULTMANAGER
     val router = DEFAULTROUTER
   }
   // implicit lazy val statusLogger = actorOf[FileStatusLogger].start()
   private lazy val props = loadProps("secret.properties")
-  lazy val DEFAULT = singleFromConf(props)
+  lazy val DEFAULTFSM = singleFromConf(props)
   lazy val DEFAULTROUTER = fsmRouter(props)
   lazy val DEFAULTMANAGER = managerFromConf(props)
-
-  private def loadProps(propsFile: String) = {
-    // TODO: 处理获取资源是出现空指针的情况
-    val is = classOf[CFtpFSM].getClassLoader.getResourceAsStream(propsFile)
-    val p = new java.util.Properties
-    p.load(is)
-    is.close()
-    p
-  }
 
   private def fromProps(p: java.util.Properties) = {
     val host = p.getProperty("test.cftp.host")
@@ -49,11 +41,14 @@ object CFtpFSM {
     val user = p.getProperty("test.cftp.user")
     val pass = p.getProperty("test.cftp.pass")
     val ddir = p.getProperty("test.cftp.ddir")
+    val activeTimeout = p.getProperty("test.cftpfsm.activeTimeout").toInt
+    val disconTimeout = p.getProperty("test.cftpfsm.disconTimeout").toInt
     val mgrHost = p.getProperty("test.cftpmgr.host")
     val mgrPort = p.getProperty("test.cftpmgr.port").toInt
     val mgrServiceId = p.getProperty("test.cftpmgr.serviceId")
     actorOf(new CFtpFSM(host, port, serverEncoding, user, pass, ddir,
-        mgrServiceId, mgrHost, mgrPort))
+      mgrServiceId, mgrHost, mgrPort,
+      activeTimeout, disconTimeout))
   }
 
   def singleFromConf(p: java.util.Properties) = {
@@ -71,7 +66,7 @@ object CFtpFSM {
     val interRouter = Routing.loadBalancerActor(CyclicIterator(multi)).start()
     val routerId = p.getProperty("test.cftpfsm.routerId")
     val router = actorOf(new ActorForwarder(routerId, interRouter)).start()
-    
+
     if (autoStart) router ! Broadcast(Open)
     router
   }
@@ -111,9 +106,8 @@ class CFtpFSM(
   user: String,
   pass: String,
   ddir: String,
-  mgrServiceId: String,
-  mgrHost: String,
-  mgrPort: Int) extends Actor with FSM[FtpClientState, Unit] {
+  mgrServiceId: String, mgrHost: String, mgrPort: Int,
+  activeTimeout: Int, disconTimeout: Int) extends Actor with FSM[FtpClientState, Unit] {
   import FSM._
 
   // defined else where
@@ -121,8 +115,8 @@ class CFtpFSM(
 
   private var cftpOpt: Option[CFtp] = None
   private var cftp: CFtp = _
-  private val ACTIVE_TIMEOUT = 5 seconds
-  private val DISCON_TIMEOUT = 10 seconds
+  private val ACTIVE_TIMEOUT = activeTimeout seconds
+  private val DISCON_TIMEOUT = disconTimeout seconds
 
   startWith(Disconnected, Unit)
 
