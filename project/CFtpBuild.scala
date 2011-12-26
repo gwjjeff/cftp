@@ -24,7 +24,7 @@ object CFtpBuild extends Build {
 
 object Dependencies {
   import Dependency._
-  val allDependencies = Seq(akkaActor, akkaRemote, scalaTest, junit, commonsNet,
+  val allDependencies = Seq(akkaActor, akkaCamel, akkaRemote, scalaTest, junit, commonsNet,
     log4j, slf4jApi, slf4jLog4j)
 }
 
@@ -36,6 +36,7 @@ object Dependency {
     val Slf4j = "1.6.4"
   }
   val akkaActor = "se.scalablesolutions.akka" % "akka-actor" % V.Akka
+  val akkaCamel = "se.scalablesolutions.akka" % "akka-camel" % V.Akka
   val akkaRemote = "se.scalablesolutions.akka" % "akka-remote" % V.Akka
   val scalaTest = "org.scalatest" %% "scalatest" % V.ScalaTest % "test"
   val junit = "junit" % "junit" % V.JUnit % "test"
