@@ -8,7 +8,7 @@ h3. 目的
 
 h3. 功能
 
-* CamelSender -> FileUploadManager <-> (多个)CFtpFSM
+* 消息方向：CamelSender ---> FileUploadManager <---> (多个)CFtpFSM
 
 * CFtpFSM 对 CFtp类进行调用，有4个状态UnAvailable, Disconnected, Connected, LoggedIn，在LoggedIn状态接收文件上传请求(UploadFile message),保持ftp连接(通过定时NOOP),并向FileUploadManager发送文件上传成功或者失败的状态消息
 
@@ -58,7 +58,7 @@ h4. 启动及停止
 * 停止CamelSender，com.shsz.young.cftp.sender.CamelSender.stop
 * 停止FSM以及service，com.shsz.young.cftp.CFtpFSM.shutdown
 
-h4. 文件操作及维护
+h4. 操作及维护
 
 * 默认配置下内部的文件操作：cftpcamel.localPath的文件由camel移动至此目录下的cftpcamel.moveDir，由camel向FileUploadManager发送文件上传请求消息后，cftp实现文件的上传，并将上传成功消息发送给FileUploadManager，由FileUploadManager把上传成功的文件由cftpcamel.moveDir移动至cftpmgr.bakPath，上传失败的文件会被FileUploadManager定时生成重新上传的请求消息，默认情况下会重试10次(cftpmgr.maxRetry)
 
@@ -74,11 +74,10 @@ m ! Clear
 h3. 已知的问题
 
 # 中文文件名的文件无法上传，生产环境已能满足要求，计划完善
-
 # 计划使用Supervisor实现对CFtpFSM的重启，如果预计网络可能出现问题，需要监控cftpcamel.moveDir和cftpcamel.localPath
 
 h3. 参考
 
-"http://akka.io/":http://akka.io/
-"http://camel.apache.org/file2.html":http://camel.apache.org/file2.html
-"http://commons.apache.org/net/":http://commons.apache.org/net/
+* "http://akka.io/":http://akka.io/
+* "http://camel.apache.org/file2.html":http://camel.apache.org/file2.html
+* "http://commons.apache.org/net/":http://commons.apache.org/net/
