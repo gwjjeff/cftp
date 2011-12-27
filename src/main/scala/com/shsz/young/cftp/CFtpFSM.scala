@@ -143,6 +143,10 @@ class CFtpFSM(
         // EventHandler.error(this, "无法连接 %s:%s".format(host, port))
         goto(UnAvailable)
       }
+    // 处理在不合适的状态接收到的文件上传请求
+    case Ev(UploadFile(local, remote)) =>
+      uploadManager ! UploadFileFail(local, remote)
+      stay
   }
 
   when(Connected) {
@@ -156,6 +160,9 @@ class CFtpFSM(
         // EventHandler.error(this, "登录失败 user:%s".format(user))
         goto(UnAvailable)
       }
+    case Ev(UploadFile(local, remote)) =>
+      uploadManager ! UploadFileFail(local, remote)
+      stay
   }
 
   when(LoggedIn) {
@@ -186,6 +193,9 @@ class CFtpFSM(
     case Ev(StateTimeout) =>
       setTimer("autoConn", Open, DISCON_TIMEOUT, false)
       goto(Disconnected)
+    case Ev(UploadFile(local, remote)) =>
+      uploadManager ! UploadFileFail(local, remote)
+      stay
   }
 
   onTransition {
