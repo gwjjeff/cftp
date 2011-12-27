@@ -45,17 +45,17 @@ object CFtpFSM {
   lazy val DEFAULTMANAGER = managerFromConf(props)
 
   private def fromProps(p: java.util.Properties) = {
-    val host = p.getProperty("test.cftp.host")
-    val port = p.getProperty("test.cftp.port").toInt
-    val serverEncoding = p.getProperty("test.cftp.serverEncoding")
-    val user = p.getProperty("test.cftp.user")
-    val pass = p.getProperty("test.cftp.pass")
-    val ddir = p.getProperty("test.cftp.ddir")
-    val activeTimeout = p.getProperty("test.cftpfsm.activeTimeout").toInt
-    val disconTimeout = p.getProperty("test.cftpfsm.disconTimeout").toInt
-    val mgrHost = p.getProperty("test.cftpmgr.host")
-    val mgrPort = p.getProperty("test.cftpmgr.port").toInt
-    val mgrServiceId = p.getProperty("test.cftpmgr.serviceId")
+    val host = p.getProperty("cftp.host")
+    val port = p.getProperty("cftp.port").toInt
+    val serverEncoding = p.getProperty("cftp.serverEncoding")
+    val user = p.getProperty("cftp.user")
+    val pass = p.getProperty("cftp.pass")
+    val ddir = p.getProperty("cftp.ddir")
+    val activeTimeout = p.getProperty("cftpfsm.activeTimeout").toInt
+    val disconTimeout = p.getProperty("cftpfsm.disconTimeout").toInt
+    val mgrHost = p.getProperty("cftpmgr.host")
+    val mgrPort = p.getProperty("cftpmgr.port").toInt
+    val mgrServiceId = p.getProperty("cftpmgr.serviceId")
     actorOf(new CFtpFSM(host, port, serverEncoding, user, pass, ddir,
       mgrServiceId, mgrHost, mgrPort,
       activeTimeout, disconTimeout))
@@ -66,15 +66,15 @@ object CFtpFSM {
   }
 
   def multiFromConf(p: java.util.Properties) = {
-    val fsmCnt = p.getProperty("test.cftpfsm.count").toInt
+    val fsmCnt = p.getProperty("cftpfsm.count").toInt
     Vector.fill(fsmCnt)(fromProps(p).start())
   }
 
   def fsmRouter(p: java.util.Properties) = {
     val multi = multiFromConf(p)
-    val autoStart = p.getProperty("test.cftpfsm.autoStart").toBoolean
+    val autoStart = p.getProperty("cftpfsm.autoStart").toBoolean
     val interRouter = Routing.loadBalancerActor(CyclicIterator(multi)).start()
-    val routerId = p.getProperty("test.cftpfsm.routerId")
+    val routerId = p.getProperty("cftpfsm.routerId")
     val router = actorOf(new ActorForwarder(routerId, interRouter)).start()
 
     if (autoStart) router ! Broadcast(Open)
@@ -82,16 +82,16 @@ object CFtpFSM {
   }
 
   def managerFromConf(p: java.util.Properties) = {
-    val mvAfterSucc = p.getProperty("test.cftpmgr.mvAfterSucc").toBoolean
-    val bakPath = p.getProperty("test.cftpmgr.bakPath")
-    val routerId = p.getProperty("test.cftpfsm.routerId")
-    val initDelay = p.getProperty("test.cftpmgr.initDelay").toLong
-    val delay = p.getProperty("test.cftpmgr.delay").toLong
-    val host = p.getProperty("test.cftpmgr.host")
-    val port = p.getProperty("test.cftpmgr.port").toInt
-    val serviceId = p.getProperty("test.cftpmgr.serviceId")
-    val maxRetry = p.getProperty("test.cftpmgr.maxRetry").toInt
-    val dumpDir = p.getProperty("test.cftpmgr.dumpDir")
+    val mvAfterSucc = p.getProperty("cftpmgr.mvAfterSucc").toBoolean
+    val bakPath = p.getProperty("cftpmgr.bakPath")
+    val routerId = p.getProperty("cftpfsm.routerId")
+    val initDelay = p.getProperty("cftpmgr.initDelay").toLong
+    val delay = p.getProperty("cftpmgr.delay").toLong
+    val host = p.getProperty("cftpmgr.host")
+    val port = p.getProperty("cftpmgr.port").toInt
+    val serviceId = p.getProperty("cftpmgr.serviceId")
+    val maxRetry = p.getProperty("cftpmgr.maxRetry").toInt
+    val dumpDir = p.getProperty("cftpmgr.dumpDir")
     val mgr = actorOf(new FileUploadManager(mvAfterSucc, bakPath, routerId,
       host, port, serviceId, initDelay, delay, maxRetry, dumpDir)).start()
     mgr

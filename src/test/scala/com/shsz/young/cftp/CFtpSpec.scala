@@ -17,11 +17,11 @@ class CFtpSpec extends WordSpec with ShouldMatchers with BeforeAndAfterAll {
   val p = new java.util.Properties
   p.load(is)
   // 必须是正确的host，user，pass，ddir
-  val host = p.getProperty("test.cftp.host")
+  val host = p.getProperty("cftp.host")
   val port = Integer.parseInt(p.getProperty("test.cftp.port"))
-  val user = p.getProperty("test.cftp.user")
-  val pass = p.getProperty("test.cftp.pass")
-  val ddir = p.getProperty("test.cftp.ddir")
+  val user = p.getProperty("cftp.user")
+  val pass = p.getProperty("cftp.pass")
+  val ddir = p.getProperty("cftp.ddir")
 
   val localFile = p.getProperty("test.cftp.localFile")
   val remoteFile = p.getProperty("test.cftp.remoteFile")
