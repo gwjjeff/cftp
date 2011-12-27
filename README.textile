@@ -8,7 +8,7 @@ h3. 目的
 
 h3. 功能
 
-* 消息方向：CamelSender ==> FileUploadManager <==> (多个)CFtpFSM
+* 消息方向：CamelSender -> FileUploadManager --- (多个)CFtpFSM
 
 * CFtpFSM 对 CFtp类进行调用，有4个状态UnAvailable, Disconnected, Connected, LoggedIn，在LoggedIn状态接收文件上传请求(UploadFile message),保持ftp连接(通过定时NOOP),并向FileUploadManager发送文件上传成功或者失败的状态消息
 
