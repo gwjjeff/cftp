@@ -10,7 +10,7 @@ h3. 功能
 
 * 消息方向：CamelSender (to) FileUploadManager (from&to) (多个)CFtpFSM
 
-* CFtpFSM 对 CFtp类进行调用，有4个状态UnAvailable, Disconnected, Connected, LoggedIn，在LoggedIn状态接收文件上传请求(UploadFile message),保持ftp连接(通过定时NOOP),并向FileUploadManager发送文件上传成功或者失败的状态消息
+* CFtpFSM 对 CFtp类进行调用，有4个状态UnAvailable, Disconnected, Connected, LoggedIn，在LoggedIn状态接收文件上传请求(UploadFile message)，保持ftp连接(通过定时NOOP)，网络断开时重连，并向FileUploadManager发送文件上传成功或者失败的状态消息
 
 * FileUploadManager在满足状态查询同时，定时扫描文件上传状态，对上传失败的文件进行重试
 
@@ -71,10 +71,11 @@ m ! DumpToFile
 m ! Pure
 m ! Clear
 
-h3. 已知的问题
+h3. 已知的问题 & TODO
 
 # 中文文件名的文件无法上传，目前生产环境已能满足要求，计划完善
 # 计划使用Supervisor实现对CFtpFSM的重启，目前如果预计网络可能出现问题，需要监控cftpcamel.moveDir和cftpcamel.localPath
+# 添加断点续传的功能，满足大文件的上传环境
 
 h3. 参考
 
