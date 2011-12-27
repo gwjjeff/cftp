@@ -24,6 +24,8 @@ case object Ping extends FtpMessage
 case class Pong(cftpId: Int, t: java.util.Date) extends FtpMessage
 case object RetryAll extends FtpMessage
 case object Dump extends FtpMessage
+case object Pure extends FtpMessage
+case object Clear extends FtpMessage
 
 object CFtpFSM {
   import utils._
@@ -262,12 +264,22 @@ class FileUploadManager(mvAfterSucc: Boolean, bakPath: String, routerId: String,
           status.lastSend = now
         case _ =>
       }
+    case Pure =>
+      st filter {
+        case (local, status @ FileStatus(remote, start, lastSend,
+          lastFail, retryReq)) =>
+          // TODO: 把这个和上面重复的条件判断抽取出来
+          if ((retryReq > 0) && (retryReq <= maxRetry) && lastFail.isDefined && (lastFail.get.getTime() > lastSend.getTime())) false
+          else true
+      }
     case Dump =>
       st.foreach {
         case (local, status) =>
           // TODO: 编写逻辑，Dump到文件
           println("%s: %s".format(local, status))
       }
+    case Clear =>
+      st.clear()
     case Ping =>
       router ! Broadcast(Ping)
     case Pong(id, time) =>

@@ -22,25 +22,38 @@ object CamelSender {
 }
 
 class CamelSender extends Actor with Consumer {
-  var manager: ActorRef = _
-  var uri: String = _
+  private var manager: ActorRef = _
+  private var uri: String = _
+  private var moveMode: Boolean = _
+  private var moveDir: String = _
+
   def endpointUri = {
-    val opts = "noop=true"
+    var opts = "noop=true"
+    if (moveMode)
+      opts = "move=%s".format(moveDir)
     "%s?%s".format(uri, opts)
   }
+
   def receive = {
     case msg: Message =>
       // println("received %s" format msg.getHeaders.get("CamelFileName"))
-      val local = msg.getHeaders.get("CamelFileAbsolutePath").toString()
-      val remote = (new java.io.File(local)).getName
-      manager ! UploadFile(local, remote)
+      var localFile = msg.getHeaders.get("CamelFileAbsolutePath").toString()
+      val fileNameOnly = msg.getHeaders.get("CamelFileNameOnly").toString()
+      if (moveMode) {
+        val parentPath = msg.getHeaders.get("CamelFileParent").toString()
+        localFile = "%s%s%s%s%s".format(parentPath, java.io.File.separator, 
+            moveDir, java.io.File.separator, fileNameOnly)
+      }
+      manager ! UploadFile(localFile, fileNameOnly)
   }
+
   override def preStart() {
     val p = loadProps("secret.properties")
     val mgrHost = p.getProperty("test.cftpmgr.host")
     val mgrPort = p.getProperty("test.cftpmgr.port").toInt
     val mgrServiceId = p.getProperty("test.cftpmgr.serviceId")
-
+    moveMode = p.getProperty("test.cftpcamel.moveMode", "true").toBoolean
+    moveDir = p.getProperty("test.cftpcamel.moveDir", ".camel")
     manager = remote.actorFor(mgrServiceId, mgrHost, mgrPort)
 
     val localDir = p.getProperty("test.cftpcamel.localPath")
