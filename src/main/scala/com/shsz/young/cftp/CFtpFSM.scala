@@ -239,7 +239,7 @@ class FileUploadManager(mvAfterSucc: Boolean, bakPath: String, routerId: String,
   lazy val router: ActorRef = registry.actorsFor(routerId).head
 
   val bakDir = new File(bakPath)
-  // TODO: 不满足requir时退出
+  // TODO: 不满足require时退出
   require(bakDir.isDirectory(), "目录 %s 不存在".format(bakPath))
 
   private var st = new HashMap[String, FileStatus]
@@ -255,8 +255,11 @@ class FileUploadManager(mvAfterSucc: Boolean, bakPath: String, routerId: String,
       if (mvAfterSucc) {
         val oldFile = new File(local)
         val oldName = oldFile.getName()
-        val newFile = new File("%s%s%s".format(
+        var newFile = new File("%s%s%s".format(
           bakDir.getCanonicalPath, File.separator, oldName))
+        if (newFile.exists())
+          newFile = new File("%s%s%s.%s".format(
+          bakDir.getCanonicalPath, File.separator, oldName, System.currentTimeMillis()))
         if (!oldFile.renameTo(newFile)) {
           // TODO: warn
         }
