@@ -10,4 +10,10 @@ package object utils {
     p
   }
 
+  // ref: http://stackoverflow.com/questions/4604237/how-to-write-to-a-file-in-scala
+  def printToFile(f: java.io.File)(op: java.io.PrintWriter => Unit) {
+    val p = new java.io.PrintWriter(f)
+    try { op(p) } finally { p.close() }
+  }
+
 }

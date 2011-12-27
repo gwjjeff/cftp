@@ -7,6 +7,7 @@ import Actor._
 import akka.routing.{ Routing, CyclicIterator }
 import Routing._
 import java.util.Date
+import com.shsz.young.cftp.utils._
 
 sealed trait FtpClientState
 case object UnAvailable extends FtpClientState
@@ -24,11 +25,11 @@ case object Ping extends FtpMessage
 case class Pong(cftpId: Int, t: java.util.Date) extends FtpMessage
 case object RetryAll extends FtpMessage
 case object Dump extends FtpMessage
+case object DumpToFile extends FtpMessage
 case object Pure extends FtpMessage
 case object Clear extends FtpMessage
 
 object CFtpFSM {
-  import utils._
   def runDefault() {
     val manager = DEFAULTMANAGER
     val router = DEFAULTROUTER
@@ -90,8 +91,9 @@ object CFtpFSM {
     val port = p.getProperty("test.cftpmgr.port").toInt
     val serviceId = p.getProperty("test.cftpmgr.serviceId")
     val maxRetry = p.getProperty("test.cftpmgr.maxRetry").toInt
+    val dumpDir = p.getProperty("test.cftpmgr.dumpDir")
     val mgr = actorOf(new FileUploadManager(mvAfterSucc, bakPath, routerId,
-      host, port, serviceId, initDelay, delay, maxRetry)).start()
+      host, port, serviceId, initDelay, delay, maxRetry, dumpDir)).start()
     mgr
   }
 
@@ -234,7 +236,8 @@ case class FileStatus(remote: String,
 class FileUploadManager(mvAfterSucc: Boolean, bakPath: String, routerId: String,
   host: String, port: Int, serviceId: String,
   initDelay: Long, delay: Long,
-  maxRetry: Int) extends Actor {
+  maxRetry: Int,
+  dumpDir: String) extends Actor {
 
   lazy val router: ActorRef = registry.actorsFor(routerId).head
 
@@ -257,9 +260,9 @@ class FileUploadManager(mvAfterSucc: Boolean, bakPath: String, routerId: String,
         val oldName = oldFile.getName()
         var newFile = new File("%s%s%s".format(
           bakDir.getCanonicalPath, File.separator, oldName))
-        if (newFile.exists())
+        while (newFile.exists())
           newFile = new File("%s%s%s.%s".format(
-          bakDir.getCanonicalPath, File.separator, oldName, System.currentTimeMillis()))
+            bakDir.getCanonicalPath, File.separator, oldName, System.currentTimeMillis()))
         if (!oldFile.renameTo(newFile)) {
           // TODO: warn
         }
@@ -291,6 +294,19 @@ class FileUploadManager(mvAfterSucc: Boolean, bakPath: String, routerId: String,
           // TODO: 编写逻辑，Dump到文件
           println("%s: %s".format(local, status))
       }
+    case DumpToFile =>
+      // TODO: 当dumpDir不存在时报错
+      val dumpFileName = "%s%sdump.%s".format(
+        new java.io.File(dumpDir).getCanonicalPath(),
+        java.io.File.separator,
+        System.currentTimeMillis())
+      val f = new java.io.File(dumpFileName)
+      printToFile(f)(p => {
+        st.foreach {
+          case (local, status) =>
+            p.println("%s: %s".format(local, status))
+        }
+      })
     case Clear =>
       st.clear()
     case Ping =>
