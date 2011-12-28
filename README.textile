@@ -36,15 +36,14 @@ cftpfsm.autoStart=true
 cftpmgr.serviceId=cftp:service
 *cftpmgr.host=localhost*
 *cftpmgr.port=2552*
-
 cftpmgr.mvAfterSucc=true
 cftpmgr.initDelay=30
 cftpmgr.delay=10
 cftpmgr.maxRetry=10
 *cftpmgr.dumpDir=e:/temp1*
 *cftpmgr.bakPath=e:/temp1/b*
-*cftpcamel.localPath=e:/upload*
 
+*cftpcamel.localPath=e:/upload*
 cftpcamel.moveMode=true
 cftpcamel.moveDir=.camel
 
