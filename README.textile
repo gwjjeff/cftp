@@ -117,6 +117,14 @@ h3. 已知的问题 & TODO
 
 h3. 参考
 
+h4. 开发相关
+
 * "http://akka.io/":http://akka.io/
 * "http://camel.apache.org/file2.html":http://camel.apache.org/file2.html
 * "http://commons.apache.org/net/":http://commons.apache.org/net/
+
+h4. 文档相关
+
+* "http://www.asciiflow.com/":http://www.asciiflow.com/
+* "http://ditaa.sourceforge.net/":http://ditaa.sourceforge.net/
+* "http://hobix.github.com/hobix/textile/":http://hobix.github.com/hobix/textile/
