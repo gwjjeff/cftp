@@ -34,8 +34,8 @@ cftpfsm.count=2
 cftpfsm.autoStart=true
 
 cftpmgr.serviceId=cftp:service
-*cftpmgr.host=localhost*
-*cftpmgr.port=2552*
+cftpmgr.host=localhost
+cftpmgr.port=2552
 cftpmgr.mvAfterSucc=true
 cftpmgr.initDelay=30
 cftpmgr.delay=10
