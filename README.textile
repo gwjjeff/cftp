@@ -102,7 +102,7 @@ h4. 操作及维护
 * 获取FileUploadManager内部保持的文件状态结构，
 
 |@val m = CFtpFSM.DEFAULTMANAGER@|用于同一JVM|
-|@val m = remote.actor("cftp:service", "localhost", "2552")@|用于不同JVM|
+|@val m = remote.actorFor("cftp:service", "localhost", "2552")@|用于不同JVM|
 |@m ! Ping@|测试每个并发ftp客户端是否活动，会在UploadFileManager运行的jvm输出日志|
 |@m ! Dump@|在UploadFileManager运行的jvm输出日志，包含内部管理的上传文件列表|
 |@m ! DumpToFile@|功能同Dump，UploadFileManger接收到消息后会在cftpmgr.dumpDir目录下生成dump.(系统时间数字串)|
