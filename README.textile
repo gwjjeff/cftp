@@ -28,7 +28,7 @@ h3. 目的
 
 h3. 功能
 
-* 消息方向：CamelSender (to) FileUploadManager (from&to) (多个)CFtpFSM
+* 消息方向(参考上面的ascii diagram)：CamelSender (to) FileUploadManager (from&to) (多个)CFtpFSM
 
 * CFtpFSM 对 CFtp类进行调用，有4个状态UnAvailable, Disconnected, Connected, LoggedIn，在LoggedIn状态接收文件上传请求(UploadFile message)，保持ftp连接(通过定时NOOP)，网络断开时重连，并向FileUploadManager发送文件上传成功或者失败的状态消息
 
@@ -106,7 +106,7 @@ h4. 操作及维护
 |@m ! Ping@|测试每个并发ftp客户端是否活动，会在UploadFileManager运行的jvm输出日志|
 |@m ! Dump@|在UploadFileManager运行的jvm输出日志，包含内部管理的上传文件列表|
 |@m ! DumpToFile@|功能同Dump，UploadFileManger接收到消息后会在cftpmgr.dumpDir目录下生成dump.(系统时间数字串)|
-|@m ! Pure@|清除所有重试次数达到上线的文件，一般用于维护时，使用DumpToFile分析之后|
+|@m ! Pure@|清除UploadFileManager中所有重试次数达到上限的文件数据项，一般用于维护时，使用DumpToFile分析之后|
 |@m ! Clear@|清除上传文件列表，慎用|
 
 h3. 已知的问题 & TODO
