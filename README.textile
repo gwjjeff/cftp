@@ -1,26 +1,25 @@
 h2. cftp
 
 h3. 目的
-<pre>
 
+<pre>
                                                        +----------+
                                                        |CFtpFSM1  |
-                                                  +--->|    cftp  |
+                                                  +---&gt;|    cftp  |
                                                   |    +----------+--------+
-          +-----------+     +----------------+<---+    +----------+
-          |CamelSender|     | UploadManager  |<------->|CFtpFSM2  |
-          |      File2|---->|   remote actor |<----+   |    cftp  +--------+      FTP Server
-          +-----------+     +----------------+<--+ |   +----------+
+          +-----------+     +----------------+&lt;---+    +----------+
+          |CamelSender|     | UploadManager  |&lt;-------&gt;|CFtpFSM2  |
+          |      File2|----&gt;|   remote actor |&lt;----+   |    cftp  +--------+      FTP Server
+          +-----------+     +----------------+&lt;--+ |   +----------+
                                                  | |   +----------+
-          localPath                              | +-->|CFtpFSM3  +--------+      dest dir
+          localPath                              | +--&gt;|CFtpFSM3  +--------+      dest dir
                                                  |     |    cftp  |
                                                  |     +----------+
                                                  |     +----------+
-                                                 +---->|CFtpFSMn  +--------+
+                                                 +----&gt;|CFtpFSMn  +--------+
                                                        |    cftp  |
-                                                       +----------+
+                                                       +----------+</pre>
 
-</pre>
 # 实现用akka-actor FSM 管理的并发ftp长连接客户端
 # 用remote actor接收上传文件请求，收集上传文件的状态，并提供消息接口操作内部数据
 # 使用akka-camel实现本地目录的监视及生成文件上传请求消息
