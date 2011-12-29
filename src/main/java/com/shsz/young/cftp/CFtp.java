@@ -7,6 +7,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.SocketException;
 import java.util.Arrays;
 
@@ -137,6 +138,11 @@ public class CFtp {
 		client.setControlEncoding(serverEncoding);
 		client.enterLocalPassiveMode();
 		client.setControlKeepAliveTimeout(15);
+//		try {
+//			client.doCommand("OPTS", "UTF8 ON");
+//		} catch (IOException e1) {
+//
+//		}
 		try {
 			client.setFileType(FTP.BINARY_FILE_TYPE);
 			log.info("默认client mode设置成功");
@@ -173,11 +179,12 @@ public class CFtp {
 		return false;
 	}
 
-	public boolean cd(String pathname) {
+	public boolean cd(String pathname) throws UnsupportedEncodingException {
+		String pathnameC = new String(pathname.getBytes(this.serverEncoding), "iso-8859-1");
 		if (!(connected && loggedIn))
 			return false;
 		try {
-			return client.changeWorkingDirectory(pathname);
+			return client.changeWorkingDirectory(pathnameC);
 		} catch (IOException e) {
 			log.debug("网络异常，cwd操作不成功");
 		}
@@ -187,10 +194,11 @@ public class CFtp {
 	public boolean upload(String local, String remote) throws IOException {
 		boolean done = false;
 		InputStream input = null;
+		String remoteC = new String(remote.getBytes(this.serverEncoding), "iso-8859-1");
 		try {
 			input = new FileInputStream(local);
 			fileUploadEvent(FU_BEGIN, local, remote);
-			done = client.storeFile(remote, input);
+			done = client.storeFile(remoteC, input);
 			input.close();
 			if (done)
 				fileUploadEvent(FU_SUCCESS, local, remote);
@@ -215,9 +223,10 @@ public class CFtp {
 	public boolean download(String remote, String local) throws IOException {
 		boolean done = false;
 		OutputStream output = null;
+		String remoteC = new String(remote.getBytes(this.serverEncoding), "iso-8859-1");
 		try {
 			output = new FileOutputStream(local);
-			done = client.retrieveFile(remote, output);
+			done = client.retrieveFile(remoteC, output);
 			output.close();
 			if (done)
 				fileEvent("成功下载文件: remote: " + remote + " local: " + local);
@@ -241,11 +250,12 @@ public class CFtp {
 
 	public boolean delete(String remote) throws IOException {
 		boolean done = false;
-		done = client.deleteFile(remote);
+		String remoteC = new String(remote.getBytes(this.serverEncoding), "iso-8859-1");
+		done = client.deleteFile(remoteC);
 		if (done) {
-			fileEvent("成功删除远程文件" + remote);
+			fileEvent("成功删除远程文件 " + remote);
 		} else {
-			fileEvent("删除远程文件失败" + remote);
+			fileEvent("删除远程文件失败 " + remote);
 		}
 		return done;
 	}
