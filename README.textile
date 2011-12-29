@@ -3,20 +3,21 @@ h2. cftp
 h3. 目的
 
 <pre>
+
                                                        +----------+
                                                        |CFtpFSM1  |
-                                                  +---&gt;|    cftp  |
+                                                  +--->|    cftp  |
                                                   |    +----------+--------+
-          +-----------+     +----------------+&lt;---+    +----------+
-          |CamelSender|     | UploadManager  |&lt;-------&gt;|CFtpFSM2  |
-          |      File2|----&gt;|   remote actor |&lt;----+   |    cftp  +--------+      FTP Server
-          +-----------+     +----------------+&lt;--+ |   +----------+
+          +-----------+     +----------------+<---+    +----------+
+          |CamelSender|     | UploadManager  |<------->|CFtpFSM2  |
+          |      File2|---->|   remote actor |<----+   |    cftp  +--------+      FTP Server
+          +-----------+     +----------------+<--+ |   +----------+
                                                  | |   +----------+
-          localPath                              | +--&gt;|CFtpFSM3  +--------+      dest dir
+          localPath                              | +-->|CFtpFSM3  +--------+      dest dir
                                                  |     |    cftp  |
                                                  |     +----------+
                                                  |     +----------+
-                                                 +----&gt;|CFtpFSMn  +--------+
+                                                 +---->|CFtpFSMn  +--------+
                                                        |    cftp  |
                                                        +----------+</pre>
 
