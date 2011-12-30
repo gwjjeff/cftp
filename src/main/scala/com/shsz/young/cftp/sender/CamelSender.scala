@@ -35,7 +35,7 @@ class CamelSender extends Actor with Consumer {
     if (moveMode)
       opts = "move=%s".format(moveDir)
     if (uriOpts.length() > 0)
-      "%s?%s&".format(uri, opts, uriOpts)
+      "%s?%s&%s".format(uri, opts, uriOpts)
     else
       "%s?%s".format(uri, opts)
   }
