@@ -38,6 +38,10 @@ h3. 功能
 
 h3. 配置
 
+h4. 日志
+
+默认日志文件为，log/${JAVA_APP}.log
+
 h4. 配置文件
 
 在classpath添加secret.properties文件，下面是示例配置，黑体的为关键配置，需要根据实际情况修改
