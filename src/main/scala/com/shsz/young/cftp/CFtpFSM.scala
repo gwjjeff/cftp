@@ -230,7 +230,8 @@ import java.util.Date
 import java.io.File
 import scala.collection.mutable.HashMap
 case class FileStatus(remote: String,
-  start: Date, var lastSend: Date, var lastFail: Option[Date], var retryReq: Int)
+  start: Date, var sendFlag: Int, var failFlag: Int,
+  var lastSend: Date, var lastFail: Option[Date], var retryReq: Int)
 
 // TODO: 控制单线程dispatcher
 class FileUploadManager(mvAfterSucc: Boolean, bakPath: String, routerId: String,
@@ -250,11 +251,11 @@ class FileUploadManager(mvAfterSucc: Boolean, bakPath: String, routerId: String,
   def receive = {
     case m @ UploadFile(local, remote) =>
       val now = new Date()
-      st += (local -> FileStatus(remote, now, now, None, 0))
+      st += (local -> FileStatus(remote, now, 1, 0, now, None, 0))
       router ! m
     case m @ UploadFileSucc(local, remote) =>
+      EventHandler.info(this, "FU_SUCC: %s".format(st(local)))
       st -= local
-      // TODO: log retry times
       if (mvAfterSucc) {
         val oldFile = new File(local)
         val oldName = oldFile.getName()
@@ -271,21 +272,23 @@ class FileUploadManager(mvAfterSucc: Boolean, bakPath: String, routerId: String,
       val now = new Date()
       st(local).retryReq += 1
       st(local).lastFail = Some(now)
+      st(local).failFlag = st(local).sendFlag + 1
     case RetryAll =>
       st.foreach {
-        case (local, status @ FileStatus(remote, start, lastSend,
-          lastFail, retryReq)) if ((retryReq > 0) && (retryReq <= maxRetry) && lastFail.isDefined && (lastFail.get.getTime() > lastSend.getTime())) =>
+        case (local, status @ FileStatus(remote, start, sendFlag, failFlag, lastSend,
+          lastFail, retryReq)) if ((retryReq > 0) && (retryReq <= maxRetry) && lastFail.isDefined && (failFlag > sendFlag)) =>
           val now = new Date()
           router ! UploadFile(local, remote)
           status.lastSend = now
+          status.sendFlag = status.failFlag + 1
         case _ =>
       }
     case Pure =>
       st filter {
-        case (local, status @ FileStatus(remote, start, lastSend,
+        case (local, status @ FileStatus(remote, start, sendFlag, failFlag, lastSend,
           lastFail, retryReq)) =>
           // TODO: 把这个和上面重复的条件判断抽取出来
-          if ((retryReq > 0) && (retryReq <= maxRetry) && lastFail.isDefined && (lastFail.get.getTime() > lastSend.getTime())) false
+          if ((retryReq > 0) && (retryReq <= maxRetry) && lastFail.isDefined && (failFlag > sendFlag)) false
           else true
       }
     case Dump =>
