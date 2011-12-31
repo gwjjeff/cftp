@@ -40,7 +40,7 @@ h3. 配置
 
 h4. 日志
 
-默认日志文件为，log/${JAVA_APP}.log
+详见log4j.properties
 
 h4. 配置文件
 
